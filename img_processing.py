@@ -51,7 +51,7 @@ def process_crop(params, gabor_k_size = 16):
     lines = cv2.HoughLines(np.uint8(imgs_final[0]),1, np.pi / 180, h_threshold)
 
     print('End thread (%d,%d)'%id_)
-    return (id_, (post_process, gauss[0], nonmax[0], th[0], imgs_final[0],lines))
+    return (id_, (post_process, tophat_img, cv2.Canny( np.zeros(h,w,3).astype(np.uint8) + tophat_img.reshape(h,w,1), 80,255), gauss[0], nonmax[0], th[0], imgs_final[0],lines))
 
 
 def get_points(rho, theta):

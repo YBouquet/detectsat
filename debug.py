@@ -53,10 +53,10 @@ def get_lines(img, output_file, h_threshold = 200):
     mm_crop = ((img - np.min(img) )/ (np.max(img) - np.min(img)) ) * 255
     mm_crop = mm_crop.astype(np.uint8())
     print('Process...')
-    dict_lines = process_crop(((0,0), mm_crop, h_threshold))
+    _,dict_lines = process_crop(((0,0), mm_crop, h_threshold))
 
-    lines = dict_lines[(0,0)][-1]
-    post_process = dict_lines[(0,0)][0]
+    lines = dict_lines[-1]
+    post_process = dict_lines[0]
     new = post_process.copy()
     print('Draw lines...')
     if lines is not None:
@@ -67,7 +67,7 @@ def get_lines(img, output_file, h_threshold = 200):
                 new = cv2.line(new, p1, p2, (255, 0, 0), 2)
     else:
         lines = []
-    return dict_lines[(0,0)], new
+    return dict_lines, new
 
 def main(args):
     print('Retrieving fits file...')
@@ -85,7 +85,7 @@ def main(args):
             crop_img = imgs[i]
             axes[i].imshow(crop_img)
         else:
-            axes[i].imshow(new)
+            axes[i].imshow(final_img)
     plt.show()
     plt.savefig(args.o)#'raw_img_full.png')
 
