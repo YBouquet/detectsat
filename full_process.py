@@ -47,9 +47,9 @@ def main(args):
         for j in range(8):
             crop_img, crop_results = dict_lines[(i,j)]
             axes[i, j].imshow(crop_img)
-
+    plt.savefig(args.o)
     plt.show()
-    plt.savefig(args.o)#'raw_img_full.png')
+#'raw_img_full.png')
 
 
 if __name__ == '__main__':

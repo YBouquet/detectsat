@@ -35,8 +35,25 @@ def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
     gabor = gauss * sinusoid
     return gabor
 
+def remove_bad_pixels(crop):
+    mean_ = np.mean(crop)
+    std_ = np.std(crop)
+    filterSize =(10, 10)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,filterSize)
+    tophat_img = cv2.morphologyEx(crop, cv2.MORPH_TOPHAT, kernel)
+    indices = np.argwhere(tophat_img > 125)
+    xs, ys = indices[:,0], indices[:,1]
+
+    new_values = std_ * np.random.randn(len(xs)) + mean_
+    min_ = np.min(new_values)
+    new_values = (new_values - min_)/(np.max(new_values) - min_)
+
+    crop[xs, ys] = new_values
+    return tophat_img,crop
+
 def process_crop(params, gabor_k_size = 16):
     id_, crop, unscaled_crop, h_threshold = params
+    fth , tcrop = remove_bad_pixels(crop)
     thetas = [k * math.pi / 4 for k in range(1,5)]
     print('Start thread (%d,%d)'%id_)
     result = []
@@ -49,12 +66,12 @@ def process_crop(params, gabor_k_size = 16):
         res_mean += conv
     res_mean = res_mean / len(result)
     filterSize =(10, 10)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,filterSize)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,filterSize)
     tophat_img = cv2.morphologyEx(res_mean, cv2.MORPH_TOPHAT, kernel)
-    print(np.max(tophat_img), np.min(tophat_img), np.mean(tophat_img), np.std(tophat_img))
+    #print(np.max(tophat_img), np.min(tophat_img), np.mean(tophat_img), np.std(tophat_img))
     (retVal, img_gseuil)=cv2.threshold(tophat_img, 80, 255, cv2.THRESH_BINARY)
     sortie = img_gseuil[16:-16,16:-16]
-    print(np.unique(sortie))
+    #print(np.unique(sortie))
     h,w = sortie.shape
     post_process = np.zeros((h,w,3)).astype(int) + crop[8:-8, 8:-8].reshape(h,w,1).astype(int)
     detector = cannyEdgeDetector([sortie], sigma=1.4, kernel_size=5, lowthreshold=0.09, highthreshold=0.17, weak_pixel=100)
@@ -62,7 +79,7 @@ def process_crop(params, gabor_k_size = 16):
     lines = cv2.HoughLines(np.uint8(imgs_final[0]),1, np.pi / 180, h_threshold)
 
     print('End thread (%d,%d)'%id_)
-    return (id_, (post_process, tophat_img, img_gseuil, gauss[0], nonmax[0], th[0], imgs_final[0],lines))
+    return (id_, (post_process, fth, tophat_img, img_gseuil, gauss[0], nonmax[0], th[0], imgs_final[0],lines))
 
 
 def get_points(rho, theta):

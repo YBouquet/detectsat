@@ -44,7 +44,7 @@ def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrang
         rot_bands = []
         max_means = []
         db_s = []
-        if theta >= 10e-1 and rho>0:
+        if theta >= 10e-1 :#and rho>0:
             #fig, axes = plt.subplots(theta_midrange + 1, 2, figsize = (20,20))
             for k, j in enumerate(range(-theta_midrange,theta_midrange+1)):
                 band = []
@@ -89,7 +89,7 @@ def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrang
             return rho, 0, None
 
 def distinguish_satellites(h,w, h_results, threshold = 100000):
-    print(h_results, h_results.shape)
+    #print(h_results, h_results.shape)
     if h_results is not None:
         filtered_lines = h_results[h_results[:,0,1] > 0.]
         n = len(filtered_lines)
@@ -108,7 +108,7 @@ def distinguish_satellites(h,w, h_results, threshold = 100000):
         G = nx.from_numpy_matrix(adj_mat)
         print("Number of satellites : %d" % nx.number_connected_components(G))
         return [np.median(filtered_lines[list(c)], axis = 0) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
-    print("Number of satellites : 0")
+    #print("Number of satellites : 0")
     return []
 
 def get_satellites_blocs(img, h_result, save_at = -1):

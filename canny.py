@@ -119,7 +119,7 @@ class cannyEdgeDetector:
         th = []
         for i, img in enumerate(self.imgs):
             img_smoothed = self.gaussian_filter(img, self.kernel_size, self.sigma)
-            gradientMat, thetaMat = self.sobel_filters(img_smoothed)
+            gradientMat, thetaMat = self.sobel_filters(img)
             nonMaxImg = self.non_max_suppression(gradientMat, thetaMat)
             thresholdImg = self.threshold(nonMaxImg)
             img_final = self.hysteresis(thresholdImg)

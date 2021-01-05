@@ -89,8 +89,9 @@ def main(args):
 
     axes[-1].imshow(mmc)
     """
+    plt.savefig(args.o)
     plt.show()
-    plt.savefig(args.o)#'raw_img_full.png')
+    #'raw_img_full.png')
 
 
 if __name__ == '__main__':
