@@ -37,48 +37,28 @@ def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
 
 def process_crop(params, gabor_k_size = 16):
     id_, crop, unscaled_crop, h_threshold = params
-    """star_mask = saturated_stars(unscaled_crop)
-    mask2=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(50,50))
-    dilation=cv2.dilate(star_mask,mask2, iterations=1)
-    indices = np.argwhere(dilation == 1)
-    final_img = crop.copy()
-    min_ = np.median(final_img)
-    final_img[indices[:,0], indices[:,1]] = min_
-    """
-
     thetas = [k * math.pi / 4 for k in range(1,5)]
     print('Start thread (%d,%d)'%id_)
     result = []
     for theta in thetas :
-        g = genGabor((gabor_k_size,gabor_k_size), 0.35, theta)
+        g = genGabor((16,16), 0.35, theta)
         tmp = convolve2d(crop, g)
         result.append(tmp)
         res_mean = np.zeros(result[0].shape)
     for conv in result:
         res_mean += conv
-
     res_mean = res_mean / len(result)
-    max_ = np.max(res_mean)
-    min_ = np.min(res_mean)
-    res_mean = (res_mean - min_) / (max_ - min_)
-
-    filterSize =(30, 30)
+    filterSize =(10, 10)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT,filterSize)
     tophat_img = cv2.morphologyEx(res_mean, cv2.MORPH_TOPHAT, kernel)
-
-    max_ = np.max(tophat_img)
-    min_ = np.min(tophat_img)
-    tophat_img =(tophat_img - min_) / (max_ - min_)
-    h,w = tophat_img.shape
-    final_crop = (tophat_img.reshape((h,w))*255).astype(np.uint8)
-
-    (retVal, img_gseuil)=cv2.threshold(final_crop, np.int(np.mean(final_crop) + 3* np.std(final_crop)), 255, cv2.THRESH_BINARY)
-
-
-    h,w = crop.shape
-    post_process = np.zeros((h,w,3)).astype(np.uint8) + crop.reshape(h,w,1).astype(np.uint8) #[gabor_k_size//2:-gabor_k_size//2, gabor_k_size//2:-gabor_k_size//2]
-    detector = cannyEdgeDetector([img_gseuil], sigma=1.4, kernel_size=5, lowthreshold=0.09, highthreshold=0.17, weak_pixel=100)
-    gauss,nonmax,th,imgs_final = detector.detect()
+    print(np.max(tophat_img), np.min(tophat_img), np.mean(tophat_img), np.std(tophat_img))
+    (retVal, img_gseuil)=cv2.threshold(tophat_img, 80, 255, cv2.THRESH_BINARY)
+    sortie = img_gseuil[16:-16,16:-16]
+    print(np.unique(sortie))
+    h,w = sortie.shape
+    post_process = np.zeros((h,w,3)).astype(int) + crop[8:-8, 8:-8].reshape(h,w,1).astype(int)
+    detector = cannyEdgeDetector([sortie], sigma=1.4, kernel_size=5, lowthreshold=0.09, highthreshold=0.17, weak_pixel=100)
+    gauss, nonmax, th, imgs_final = detector.detect()
     lines = cv2.HoughLines(np.uint8(imgs_final[0]),1, np.pi / 180, h_threshold)
 
     print('End thread (%d,%d)'%id_)
