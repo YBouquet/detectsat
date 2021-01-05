@@ -5,6 +5,29 @@ import math
 import networkx as nx
 
 datapath = 'graphs/'
+def get_slope(rho, theta, x_offset = 0, y_offset = 0):
+    p0,p1,p2 = get_points(rho, theta)
+    x0,y0 = p0
+    x1,y1 = p1
+    x2,y2 = p2
+    return p0, (lambda x : y0 - (y2-y1)/(x2-x1) * (x0 + y_offset) + x_offset +  (y2-y1)/(x2-x1)*x)
+def get_slope_parameters(rho, theta, x_offset = 0, y_offset = 0):
+    p0,p1,p2 = get_points(rho, theta)
+    x0,y0 = p0
+    x1,y1 = p1
+    x2,y2 = p2
+    return (x0+x_offset, y0+y_offset), y0+y_offset - ((y2-y1)/(x2-x1)) * (x0+x_offset), ((y2-y1)/(x2-x1))
+
+def get_points(rho, theta):
+    a = np.cos(theta)
+    b = np.sin(theta)
+    x0 = a * rho
+    y0 = b * rho
+    x1 = int(x0 + 10000 * (-b))
+    y1 = int(y0 + 10000 * (a))
+    x2 = int(x0 - 10000 * (-b))
+    y2 = int(y0 - 10000 * (a))
+    return (x0,y0),(x1,y1),(x2,y2)
 
 def build_line(rho, theta,i,h,w, x_offset = 0, y_offset = 0):
     (x0,y0), f = get_slope(rho, theta, x_offset = x_offset, y_offset = y_offset)
@@ -21,7 +44,7 @@ def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrang
         rot_bands = []
         max_means = []
         db_s = []
-        if theta >= 10e-1:
+        if theta >= 10e-1 and rho>0:
             #fig, axes = plt.subplots(theta_midrange + 1, 2, figsize = (20,20))
             for k, j in enumerate(range(-theta_midrange,theta_midrange+1)):
                 band = []
@@ -66,8 +89,9 @@ def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrang
             return rho, 0, None
 
 def distinguish_satellites(h,w, h_results, threshold = 100000):
-    if h_results[1] is not None:
-        filtered_lines = h_results[1][h_results[1][:,0,1] > 0.]
+    print(h_results, h_results.shape)
+    if h_results is not None:
+        filtered_lines = h_results[h_results[:,0,1] > 0.]
         n = len(filtered_lines)
         m_lines = []
         for i, line in enumerate(filtered_lines):
@@ -94,6 +118,7 @@ def get_satellites_blocs(img, h_result, save_at = -1):
     h,w = img.shape
     lines = distinguish_satellites(h,w,h_result)
     for i, line in enumerate(lines):
+        print(i,line)
         r,t,b= get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrange = 10, axis_midrange = 30, save = (i==save_at))
         if b is not None:
             rs.append(r)
@@ -103,6 +128,8 @@ def get_satellites_blocs(img, h_result, save_at = -1):
 
 def retrieve_raw_satellites(params):#raw_img, crops_addresses, h_results, i=0, j=0):
     crop, h_result, i,j = params
+    id = (i,j)
+    print('Start thread (%d,%d)'%id)
     mm_crop = ((crop - np.min(crop) )/ (np.max(crop) - np.min(crop)) ) * 255
     mm_crop = mm_crop.astype(np.uint8())
     filterSize =(30, 30)
@@ -118,4 +145,5 @@ def retrieve_raw_satellites(params):#raw_img, crops_addresses, h_results, i=0, j
             bresen_line = build_line(r, ts[i], j, h,w)
             new[bresen_line[:,0], bresen_line[:,1]] = (255,0,0)
         #imgs.append(tmp)
-    return (i,j), (new, (rs,ts,bs))
+    print('End thread (%d,%d)'%id)
+    return id, (new, (rs,ts,bs))

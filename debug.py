@@ -14,14 +14,6 @@ def get_hough_results(input_file):
         result = np.load(f, allow_pickle = True)
     return result
 
-def get_crop(img, x_addresses, y_addresses):
-    min_x, max_x = x_addresses
-    min_y, max_y = y_addresses
-    result = img[min_x:max_x, min_y : max_y]
-    if np.any(np.isnan(result)):
-        raise Exception('Some values are NAN')
-    return result
-
 def get_points(rho, theta):
     a = np.cos(theta)
     b = np.sin(theta)
@@ -48,12 +40,12 @@ def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
     return gabor
 
 
-def get_lines(img, output_file, h_threshold = 200):
+def get_lines(img, unscaled_img, output_file, h_threshold = 200):
     outputs = []
     mm_crop = ((img - np.min(img) )/ (np.max(img) - np.min(img)) ) * 255
     mm_crop = mm_crop.astype(np.uint8())
     print('Process...')
-    _,dict_lines = process_crop(((0,0), mm_crop, h_threshold))
+    _,dict_lines = process_crop(((0,0), mm_crop,unscaled_img, h_threshold))
 
     lines = dict_lines[-1]
     post_process = dict_lines[0]
@@ -71,21 +63,32 @@ def get_lines(img, output_file, h_threshold = 200):
 
 def main(args):
     print('Retrieving fits file...')
-    raw_img, _ = get_raw_image(args.i)#"OMEGA.2020-03-18T00_21_55.912_fullfield_binned.fits")
+    raw_img, unscaled_img = get_raw_image(args.i)#"OMEGA.2020-03-18T00_21_55.912_fullfield_binned.fits")
     crops_addresses = get_crops_addresses(raw_img)
     m_row = list(crops_addresses.keys())[args.subcrop_i]
     crop = get_crop(raw_img, m_row, crops_addresses[m_row][args.subcrop_j])#[8:-8,8:-8]
+    unscaled_crop = get_crop(unscaled_img, m_row, crops_addresses[m_row][args.subcrop_j])
+
     print('Crop Retrieved')
     print('Starting Hough Process')
-    imgs, final_img = get_lines(crop, args.h)#"image04.npy")
+    imgs, final_img = get_lines(crop,unscaled_crop, args.h, h_threshold = args.hough)#"image04.npy")
 
-    f, axes = plt.subplots(1,len(imgs), figsize = (64,64))
+    f, axes = plt.subplots(1,len(imgs)+1, figsize = (64,64))
     for i in range(len(imgs)):
         if i < len(imgs) -1:
             crop_img = imgs[i]
             axes[i].imshow(crop_img)
         else:
             axes[i].imshow(final_img)
+    """
+    parameters = tuple([crop, imgs[-1], 0,0])
+
+    _, results = retrieve_raw_satellites(parameters)
+
+    mmc, tuple_= results
+
+    axes[-1].imshow(mmc)
+    """
     plt.show()
     plt.savefig(args.o)#'raw_img_full.png')
 

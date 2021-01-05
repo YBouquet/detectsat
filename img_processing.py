@@ -4,6 +4,25 @@ from canny import cannyEdgeDetector
 import math
 from scipy.signal import convolve2d
 
+
+def saturated_stars(unscaled_img):
+    sigma = np.std(unscaled_img)
+    mean = np.mean(unscaled_img)
+    indices = np.argwhere(unscaled_img > mean + 3*sigma)
+    mask = np.zeros(unscaled_img.shape).astype(np.uint8)
+    mask[indices[:,0], indices[:,1]] = 1
+    mask_1 = np.zeros(unscaled_img.shape).astype(np.uint8)
+    indices = np.argwhere( unscaled_img > mean)
+    mask_1[indices[:,0], indices[:,1]] = 1
+    seed = mask * mask_1
+    disk_mask =cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
+    for i in range(100):
+        prev_seed = seed
+        seed = cv2.dilate(seed, disk_mask, iterations = 1) * mask_1
+        if (seed == prev_seed).all():
+            break
+    return seed#, boxes
+
 def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
     radius = (int(sz[0]/2.0), int(sz[1]/2.0))
     [x, y] = np.meshgrid(range(-radius[0], radius[0]+1), range(-radius[1], radius[1]+1))
@@ -17,7 +36,16 @@ def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
     return gabor
 
 def process_crop(params, gabor_k_size = 16):
-    id_, crop, h_threshold = params
+    id_, crop, unscaled_crop, h_threshold = params
+    """star_mask = saturated_stars(unscaled_crop)
+    mask2=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(50,50))
+    dilation=cv2.dilate(star_mask,mask2, iterations=1)
+    indices = np.argwhere(dilation == 1)
+    final_img = crop.copy()
+    min_ = np.median(final_img)
+    final_img[indices[:,0], indices[:,1]] = min_
+    """
+
     thetas = [k * math.pi / 4 for k in range(1,5)]
     print('Start thread (%d,%d)'%id_)
     result = []
@@ -28,30 +56,33 @@ def process_crop(params, gabor_k_size = 16):
         res_mean = np.zeros(result[0].shape)
     for conv in result:
         res_mean += conv
+
     res_mean = res_mean / len(result)
-    filterSize =(10, 10)
+    max_ = np.max(res_mean)
+    min_ = np.min(res_mean)
+    res_mean = (res_mean - min_) / (max_ - min_)
+
+    filterSize =(30, 30)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT,filterSize)
     tophat_img = cv2.morphologyEx(res_mean, cv2.MORPH_TOPHAT, kernel)
 
-    (retVal, img_gseuil)=cv2.threshold(tophat_img, 80, 255, cv2.THRESH_BINARY)
-    mask1=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
-    erosion=cv2.erode(img_gseuil, mask1, iterations=1)
+    max_ = np.max(tophat_img)
+    min_ = np.min(tophat_img)
+    tophat_img =(tophat_img - min_) / (max_ - min_)
+    h,w = tophat_img.shape
+    final_crop = (tophat_img.reshape((h,w))*255).astype(np.uint8)
 
-    mask2=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    dilation=cv2.dilate(erosion,mask2, iterations=1)
+    (retVal, img_gseuil)=cv2.threshold(final_crop, np.int(np.mean(final_crop) + 3* np.std(final_crop)), 255, cv2.THRESH_BINARY)
 
-    mask3=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    sortie=cv2.erode(dilation, mask3, iterations=1)
 
-    sortie = sortie[gabor_k_size:-gabor_k_size,gabor_k_size:-gabor_k_size]
-    h,w = sortie.shape
-    post_process = np.zeros((h,w,3)).astype(int) + crop[gabor_k_size//2:-gabor_k_size//2, gabor_k_size//2:-gabor_k_size//2].reshape(h,w,1).astype(int)
-    detector = cannyEdgeDetector([sortie], sigma=1.4, kernel_size=5, lowthreshold=0.09, highthreshold=0.17, weak_pixel=100)
+    h,w = crop.shape
+    post_process = np.zeros((h,w,3)).astype(np.uint8) + crop.reshape(h,w,1).astype(np.uint8) #[gabor_k_size//2:-gabor_k_size//2, gabor_k_size//2:-gabor_k_size//2]
+    detector = cannyEdgeDetector([img_gseuil], sigma=1.4, kernel_size=5, lowthreshold=0.09, highthreshold=0.17, weak_pixel=100)
     gauss,nonmax,th,imgs_final = detector.detect()
     lines = cv2.HoughLines(np.uint8(imgs_final[0]),1, np.pi / 180, h_threshold)
 
     print('End thread (%d,%d)'%id_)
-    return (id_, (post_process, tophat_img, cv2.Canny( np.zeros(h,w,3).astype(np.uint8) + tophat_img.reshape(h,w,1), 80,255), gauss[0], nonmax[0], th[0], imgs_final[0],lines))
+    return (id_, (post_process, tophat_img, img_gseuil, gauss[0], nonmax[0], th[0], imgs_final[0],lines))
 
 
 def get_points(rho, theta):

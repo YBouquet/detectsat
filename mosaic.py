@@ -7,6 +7,16 @@ import numpy as np
 import math
 import time
 
+
+
+def get_crop(img, x_addresses, y_addresses):
+    min_x, max_x = x_addresses
+    min_y, max_y = y_addresses
+    result = img[min_x:max_x, min_y : max_y]
+    if np.any(np.isnan(result)):
+        raise Exception('Some values are NAN')
+    return result
+
 def get_raw_image(filename):
     hdul = fits.open(filename)
     data = hdul[1].data
