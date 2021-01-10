@@ -86,10 +86,11 @@ def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrang
             result_band = np.arange(-axis_midrange,axis_midrange)[band_3db]
             return rho, line[0][1] + theta_step *final_j, result_band
         else:
+            print("VERTICAL LINE !!! WTF")
             return rho, 0, None
 
 def distinguish_satellites(h,w, h_results, threshold = 100000):
-    #print(h_results, h_results.shape)
+    print(h_results, h_results.shape)
     if h_results is not None:
         filtered_lines = h_results[h_results[:,0,1] > 0.]
         n = len(filtered_lines)
@@ -100,13 +101,15 @@ def distinguish_satellites(h,w, h_results, threshold = 100000):
                     (x0,y0), b, a = get_slope_parameters(rho, theta)
                     F = lambda x : (a*(x**2))/2 + b*x
                     m_lines.append(F(w-1) - F(0))
+                else:
+                    print('vertical line !!! ')
         dist_mat = np.zeros((n,n))
         for i,x in enumerate(m_lines) :
             for j,y in enumerate(m_lines):
                 dist_mat[i,j] = abs(x - y)
         adj_mat = (dist_mat < threshold).astype(float) - np.eye(dist_mat.shape[0])
         G = nx.from_numpy_matrix(adj_mat)
-        print("Number of satellites : %d" % nx.number_connected_components(G))
+        #print("Number of satellites : %d" % nx.number_connected_components(G))
         return [np.median(filtered_lines[list(c)], axis = 0) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
     #print("Number of satellites : 0")
     return []
@@ -118,8 +121,8 @@ def get_satellites_blocs(img, h_result, save_at = -1):
     h,w = img.shape
     lines = distinguish_satellites(h,w,h_result)
     for i, line in enumerate(lines):
-        print(i,line)
-        r,t,b= get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrange = 10, axis_midrange = 30, save = (i==save_at))
+        #print(i,line)
+        r,t,b= get_window_from_line(img, line, theta_step = 0.05*math.pi/180., theta_midrange = 10, axis_midrange = 30, save = (i==save_at))
         if b is not None:
             rs.append(r)
             ts.append(t)

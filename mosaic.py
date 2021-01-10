@@ -17,14 +17,17 @@ def get_crop(img, x_addresses, y_addresses):
         raise Exception('Some values are NAN')
     return result
 
+def scale_image(raw_img):
+    s = ZScaleInterval()
+    z1,z2 = s.get_limits(raw_img)
+    raw_img[raw_img > z2] = z2
+    raw_img[raw_img < z1] = z1
+    return raw_img
+    
 def get_raw_image(filename):
     hdul = fits.open(filename)
     data = hdul[1].data
-    s = ZScaleInterval()
-    z1,z2 = s.get_limits(data)
-    raw_img = data[::-1].copy()
-    raw_img[raw_img > z2] = z2
-    raw_img[raw_img < z1] = z1
+    raw_img = scale_image(data[::-1].copy())
     return raw_img, data[::-1]
 
 def get_crops_addresses(raw_img):

@@ -43,16 +43,17 @@ def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
 def get_lines(img, unscaled_img, output_file, h_threshold = 200):
     outputs = []
     mm_crop = ((img - np.min(img) )/ (np.max(img) - np.min(img)) ) * 255
-    mm_crop = mm_crop.astype(np.uint8())
+    mm_crop = mm_crop.astype(np.uint8)
     print('Process...')
-    _,dict_lines = process_crop(((0,0), mm_crop,unscaled_img, h_threshold))
+    _,dict_lines = process_crop(((0,0), mm_crop, unscaled_img, h_threshold))
 
     lines = dict_lines[-1]
     post_process = dict_lines[0]
     new = post_process.copy()
     print('Draw lines...')
     if lines is not None:
-        lines = lines[lines[:,0,1] != 0]
+        #lines = lines[lines[:,0,1] != 0]
+        print(lines)
         for line in lines:
             for rho, theta in line:
                 _,p1,p2 = get_points(rho, theta)
@@ -80,7 +81,8 @@ def main(args):
             axes[i].imshow(crop_img)
         else:
             axes[i].imshow(final_img)
-    """
+    """print('Hough process done, start distinguish_satellites')
+
     parameters = tuple([crop, imgs[-1], 0,0])
 
     _, results = retrieve_raw_satellites(parameters)
