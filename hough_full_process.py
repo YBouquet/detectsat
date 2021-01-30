@@ -1,12 +1,13 @@
 from matplotlib import pyplot as plt
-
-import prologue
-
-from post_processing import *
-from mosaic import *
-from img_processing import *
 import time
 import multiprocessing as mp
+
+
+import utils.prologue
+
+from utils.post_processing import *
+from utils.mosaic import *
+from utils.img_processing import *
 
 
 def main(args):

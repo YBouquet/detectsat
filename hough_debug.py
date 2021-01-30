@@ -2,12 +2,13 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 
 import numpy as np
-from img_processing import process_crop
 import math
-from mosaic import *
-from post_processing import *
-import prologue
-from lines import *
+
+from utils.mosaic import *
+from utils.lines import *
+from utils.img_processing import process_crop
+from utils.post_processing import *
+import utils.prologue
 
 
 
