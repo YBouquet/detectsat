@@ -38,10 +38,10 @@ def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
 def main(args):
     print('Retrieving fits file...')
     raw_img, unscaled_img = get_raw_image(args.i)#"OMEGA.2020-03-18T00_21_55.912_fullfield_binned.fits")
-    crops_addresses = get_crops_addresses(raw_img)
+    crops_addresses = get_blocks_addresses(raw_img)
     m_row = list(crops_addresses.keys())[args.subcrop_i]
-    crop = get_crop(raw_img, m_row, crops_addresses[m_row][args.subcrop_j])#[8:-8,8:-8]
-    unscaled_crop = get_crop(unscaled_img, m_row, crops_addresses[m_row][args.subcrop_j])
+    crop = get_block(raw_img, m_row, crops_addresses[m_row][args.subcrop_j])#[8:-8,8:-8]
+    unscaled_crop = get_block(unscaled_img, m_row, crops_addresses[m_row][args.subcrop_j])
 
     print('Crop Retrieved')
     print('Starting Hough Process')

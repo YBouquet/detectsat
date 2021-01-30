@@ -11,13 +11,13 @@ import multiprocessing as mp
 
 def main(args):
     raw_img, unscaled_img = get_raw_image(args.i)#"OMEGA.2020-03-18T00_21_55.912_fullfield_binned.fits")
-    crops_addresses = get_crops_addresses(raw_img)
+    crops_addresses = get_blocks_addresses(raw_img)
     #hough_result = get_lines(raw_img, crops_addresses, len(crops_addresses.keys()), len(list(crops_addresses.items())[0][1]), args['h'])#"image04.npy")
     crops = []
     for i, row in enumerate(sorted(crops_addresses.keys())):
         for j, column in enumerate(crops_addresses[row]):
-            crop = get_crop(raw_img, row, column)
-            unscaled_crop = get_crop(unscaled_img, row, column)
+            crop = get_block(raw_img, row, column)
+            unscaled_crop = get_block(unscaled_img, row, column)
             mm_crop = ((crop - np.min(crop) )/ (np.max(crop) - np.min(crop)) ) * 255
             mm_crop = mm_crop.astype(np.uint8())
             crops.append(((i,j), mm_crop, unscaled_crop, args.hough))
@@ -49,7 +49,7 @@ def main(args):
                     np.save('./lines/' + args.o[:-4] + '_%d%d'%(i,j) + '.npy', lines)
 
             m_row = list(crops_addresses.keys())[i]
-            crop = get_crop(raw_img, m_row, crops_addresses[m_row][j])[8:-8,8:-8]
+            crop = get_block(raw_img, m_row, crops_addresses[m_row][j])[8:-8,8:-8]
             params_tuples.append(tuple([crop, lines, i,j]))
 
     print('Start Post-Processing...')

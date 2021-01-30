@@ -9,7 +9,23 @@ import time
 
 
 
-def get_crop(img, x_addresses, y_addresses):
+def get_block(img, x_addresses, y_addresses):
+    """
+    Rescale pixels intensity according to the iraf's ZScale Algorithm
+
+    Parameters
+    ----------
+    img : list[int]
+        full mosaic
+    x_addresses : numpy.array(np.float32)
+        [min_x, max_x]
+    y_addresses : list[int]
+        [min_y, min_y]
+    Return
+    ----------
+    result : numpy.array(np.float32)
+        corresponding image block
+    """
     min_x, max_x = x_addresses
     min_y, max_y = y_addresses
     result = img[min_x:max_x, min_y : max_y]
@@ -54,7 +70,7 @@ def get_raw_image(filename):
     raw_img = scale_image(data[::-1].copy())
     return raw_img, data[::-1]
 
-def get_crops_addresses(raw_img):
+def get_blocks_addresses(raw_img):
     """
     Isolating the 32 blocks of the mosaic by registering for each block
     the indices of their corners

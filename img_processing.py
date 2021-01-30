@@ -5,8 +5,6 @@ import math
 from scipy.signal import convolve2d
 
 
-
-
 def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
 
     radius = (int(sz[0]/2.0), int(sz[1]/2.0))
