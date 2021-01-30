@@ -65,7 +65,7 @@ def main(args):
     axes[-1].imshow(mmc)
     axes[-2].imshow(fth)
     axes[-3].imshow(imgsds)
-    axes[-3].imshow(thds)
+    axes[-4].imshow(thds)
 
     plt.savefig(args.o)
     plt.show()
