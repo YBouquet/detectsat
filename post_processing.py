@@ -1,44 +1,14 @@
-from bresenham import bresenham
 import cv2
 import numpy as np
 import math
 import networkx as nx
+from lines import *
 
 datapath = 'graphs/'
-def get_slope(rho, theta, x_offset = 0, y_offset = 0):
-    p0,p1,p2 = get_points(rho, theta)
-    x0,y0 = p0
-    x1,y1 = p1
-    x2,y2 = p2
-    return p0, (lambda x : y0 - (y2-y1)/(x2-x1) * (x0 + y_offset) + x_offset +  (y2-y1)/(x2-x1)*x)
-def get_slope_parameters(rho, theta, x_offset = 0, y_offset = 0):
-    p0,p1,p2 = get_points(rho, theta)
-    x0,y0 = p0
-    x1,y1 = p1
-    x2,y2 = p2
-    return (x0+x_offset, y0+y_offset), y0+y_offset - ((y2-y1)/(x2-x1)) * (x0+x_offset), ((y2-y1)/(x2-x1))
 
-def get_points(rho, theta):
-    a = np.cos(theta)
-    b = np.sin(theta)
-    x0 = a * rho
-    y0 = b * rho
-    x1 = int(x0 + 10000 * (-b))
-    y1 = int(y0 + 10000 * (a))
-    x2 = int(x0 - 10000 * (-b))
-    y2 = int(y0 - 10000 * (a))
-    return (x0,y0),(x1,y1),(x2,y2)
 
-def build_line(rho, theta,i,h,w, x_offset = 0, y_offset = 0):
-    (x0,y0), f = get_slope(rho, theta, x_offset = x_offset, y_offset = y_offset)
-    bresen_line = bresenham(int(np.floor(f(0)))+i, 0, int(np.floor(f(w-1)))+i, w-1)
-    m_lits = list(bresen_line)
-    f_array = np.array([[int(math.floor(x)), int(math.floor(y))] for x,y in m_lits])
-    #print((f_array[:,0] < h) & (f_array[:,0] >=0) & (f_array[:,1] < w) & (f_array[:,1] >=0))
-    f_array = f_array[(f_array[:,0] < h) & (f_array[:,0] >=0) & (f_array[:,1] < w) & (f_array[:,1] >=0)]
-    return f_array
+def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrange = 10, axis_midrange = 30):
 
-def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrange = 10, axis_midrange = 30, save = False):
     h,w = img.shape
     for rho, theta in line:
         rot_bands = []
@@ -67,10 +37,7 @@ def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrang
                     max_means.append(0)
                     db_s.append(None)
                 rot_bands.append(band)
-            """
-            if save :
-                fig.savefig(datapath+'sat.jpg')
-            """
+
             np_max_means = np.array(max_means)
             maxx_means = np_max_means[np_max_means[:,0] == np.max(np_max_means[:,0])]
             maxxz_means = maxx_means[maxx_means[:,2] == np.min(maxx_means[:,2])]
@@ -80,19 +47,17 @@ def get_window_from_line(img, line, theta_step = 0.1*math.pi/180., theta_midrang
             final_db = db_s[index]
             band_3db = np.argwhere(final_db >= np.max(final_db) + 10 * math.log(1/2)).reshape(-1)
 
-            """plt.imshow(final_band[band_3db])
-            plt.show()"""
             final_j =  np.arange(-theta_midrange,theta_midrange+1)[index]
             result_band = np.arange(-axis_midrange,axis_midrange)[band_3db]
             return rho, line[0][1] + theta_step *final_j, result_band
         else:
-            print("VERTICAL LINE !!! WTF")
             return rho, 0, None
 
-def distinguish_satellites(h,w, h_results, threshold = 100000):
-    print(h_results, h_results.shape)
-    if h_results is not None:
-        filtered_lines = h_results[h_results[:,0,1] > 0.]
+def distinguish_satellites(h,w, h_results, id_, threshold = 200000 ):
+
+    if h_results is not None and len(h_results) > 0:
+        print(h_results, h_results.shape)
+        filtered_lines = h_results
         n = len(filtered_lines)
         m_lines = []
         for i, line in enumerate(filtered_lines):
@@ -102,34 +67,38 @@ def distinguish_satellites(h,w, h_results, threshold = 100000):
                     F = lambda x : (a*(x**2))/2 + b*x
                     m_lines.append(F(w-1) - F(0))
                 else:
-                    print('vertical line !!! ')
+                    print('vertical line !!! (%d,%d)' % id_)
         dist_mat = np.zeros((n,n))
         for i,x in enumerate(m_lines) :
             for j,y in enumerate(m_lines):
                 dist_mat[i,j] = abs(x - y)
         adj_mat = (dist_mat < threshold).astype(float) - np.eye(dist_mat.shape[0])
         G = nx.from_numpy_matrix(adj_mat)
-        #print("Number of satellites : %d" % nx.number_connected_components(G))
+        print("Number of satellites : %d" % nx.number_connected_components(G))
         return [np.median(filtered_lines[list(c)], axis = 0) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
     #print("Number of satellites : 0")
     return []
 
-def get_satellites_blocs(img, h_result, save_at = -1):
+def get_satellites_blocs(img, h_result, id_):
+
     rs = []
     ts = []
     bs = []
     h,w = img.shape
-    lines = distinguish_satellites(h,w,h_result)
+    lines = distinguish_satellites(h,w,h_result, id_)
     for i, line in enumerate(lines):
         #print(i,line)
-        r,t,b= get_window_from_line(img, line, theta_step = 0.05*math.pi/180., theta_midrange = 10, axis_midrange = 30, save = (i==save_at))
+        r,t,b= get_window_from_line(img, line, theta_step = 0.05*math.pi/180., theta_midrange = 10, axis_midrange = 30)
         if b is not None:
             rs.append(r)
             ts.append(t)
             bs.append(b)
-    return rs, ts, bs
+    return lines, rs, ts, bs
+
+palette = [(255,0,0),(0,255,0),(255,255,0),(255,0,255),(0,255,255)] #red, green, yellow, majenta, cyan
 
 def retrieve_raw_satellites(params):#raw_img, crops_addresses, h_results, i=0, j=0):
+
     crop, h_result, i,j = params
     id = (i,j)
     print('Start thread (%d,%d)'%id)
@@ -140,13 +109,13 @@ def retrieve_raw_satellites(params):#raw_img, crops_addresses, h_results, i=0, j
     tophat_img = cv2.morphologyEx(mm_crop, cv2.MORPH_TOPHAT, kernel)
     (retVal, img_gseuil)=cv2.threshold(tophat_img, 120, 1., cv2.THRESH_BINARY)
     th_crop = np.multiply(crop, img_gseuil)
-    rs, ts, bs = get_satellites_blocs(th_crop, h_result)
+    lines, rs, ts, bs = get_satellites_blocs(th_crop, h_result, (i,j))
     h,w = th_crop.shape
     new = np.zeros((h,w,3)).astype(int) + mm_crop.reshape(h,w,1).astype(int)
     for i, r in enumerate(rs):
         for j in bs[i]:
             bresen_line = build_line(r, ts[i], j, h,w)
-            new[bresen_line[:,0], bresen_line[:,1]] = (255,0,0)
-        #imgs.append(tmp)
+            new[bresen_line[:,0], bresen_line[:,1]] = palette[i%5]
+
     print('End thread (%d,%d)'%id)
-    return id, (new, (rs,ts,bs))
+    return id, (new, tophat_img, img_gseuil, th_crop, (lines, rs,ts,bs))

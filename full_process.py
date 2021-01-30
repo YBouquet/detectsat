@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
 import prologue
 
@@ -7,7 +7,6 @@ from mosaic import *
 from img_processing import *
 import time
 import multiprocessing as mp
-from matplotlib import pyplot as plt
 
 
 def main(args):
@@ -26,7 +25,7 @@ def main(args):
     print('Start Hough Processing...')
     start = time.time()
     if not(args.load_lines) :
-        pool = mp.Pool(8)
+        pool = mp.Pool(6)
         with pool:
             dict_lines = dict(pool.map(process_crop, crops))
         pool.join()
@@ -53,11 +52,10 @@ def main(args):
             crop = get_crop(raw_img, m_row, crops_addresses[m_row][j])[8:-8,8:-8]
             params_tuples.append(tuple([crop, lines, i,j]))
 
-    dict_lines = dict([((i,j), (crop,lines)) for crop, lines, i,j in params_tuples])
-    """print('Start Post-Processing...')
+    print('Start Post-Processing...')
 
     start = time.time()
-    pool = mp.Pool(8)
+    pool = mp.Pool(6)
     with pool:
         dict_lines = dict(pool.map(retrieve_raw_satellites, params_tuples))
     pool.join()
@@ -70,24 +68,10 @@ def main(args):
     f, axes = plt.subplots(4,8, figsize = (64,64))
     for i in range(4):
         for j in range(8):
-            crop_img, crop_results = dict_lines[(i,j)]
-            axes[i, j].imshow(crop_img)"""
+            crop_img, _,_,_, crop_results = dict_lines[(i,j)]
+            axes[i, j].imshow(crop_img)
 
-    f, axes = plt.subplots(4,8, figsize=(64,64))
-    for i in range(4):
-        for j in range(8):
-            lines = dict_lines[(i,j)][-1]
-            post_process = dict_lines[(i,j)][0]
-            new = post_process.copy()
-            print('Draw lines for (%d,%d)'%(i,j))
-            print(lines is not None, lines, lines.size )
-            if lines is not None and len(lines) > 0:
-                #lines = lines[lines[:,0,1] != 0]
-                for line in lines:
-                    for rho, theta in line:
-                        _,p1,p2 = get_points(rho, theta)
-                        new = cv2.line(new, p1, p2, (255, 0, 0), 2)
-            axes[i,j].imshow(new)
+
     plt.savefig(args.o)
     plt.show()
 #'raw_img_full.png')

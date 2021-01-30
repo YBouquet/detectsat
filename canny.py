@@ -3,6 +3,19 @@ from scipy import ndimage
 import numpy as np
 
 class cannyEdgeDetector:
+    """
+    Code retrieved from a public repository :
+    https://github.com/FienSoP/canny_edge_detector/blob/master/canny_edge_detector.py
+
+    Parameters
+    ----------
+    filename : string
+
+    Return
+    ----------
+    raw_img, data : (numpy.array(np.float32), numpy.array(np.float32))
+        Rescaled mosaic, unscaled mosaic
+    """
     def __init__(self, imgs, sigma=1, kernel_size=5, weak_pixel=75, strong_pixel=255, lowthreshold=0.05, highthreshold=0.15):
         self.imgs = imgs
         self.imgs_final = []
@@ -13,14 +26,8 @@ class cannyEdgeDetector:
         self.lowThreshold = lowthreshold
         self.highThreshold = highthreshold
 
-    def gaussian_filter(self, img, size, sigma=1):
-        size = int(size) // 2
-        x, y = np.mgrid[-size:size+1, -size:size+1]
-        normal = 1 / (2.0 * np.pi * sigma**2)
-        g =  np.exp(-((x**2 + y**2) / (2.0*sigma**2))) * normal
-        return convolve(img, g)
-
     def sobel_filters(self, img):
+
         Kx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], np.float32)
         Ky = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], np.float32)
 
@@ -33,6 +40,7 @@ class cannyEdgeDetector:
         return (G, theta)
 
     def non_max_suppression(self, img, D):
+
         M, N = img.shape
         Z = np.zeros((M,N), dtype=np.int32)
         angle = D * 180. / np.pi
@@ -114,16 +122,15 @@ class cannyEdgeDetector:
         return img
 
     def detect(self):
+
         gauss = []
         nonmax = []
         th = []
         for i, img in enumerate(self.imgs):
-            img_smoothed = self.gaussian_filter(img, self.kernel_size, self.sigma)
             gradientMat, thetaMat = self.sobel_filters(img)
             nonMaxImg = self.non_max_suppression(gradientMat, thetaMat)
             thresholdImg = self.threshold(nonMaxImg)
             img_final = self.hysteresis(thresholdImg)
-            gauss.append(img_smoothed)
             nonmax.append(nonMaxImg)
             th.append(thresholdImg)
             self.imgs_final.append(img_final)

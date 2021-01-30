@@ -7,40 +7,12 @@ import math
 from mosaic import *
 from post_processing import *
 import prologue
+from lines import *
 
 
-def get_hough_results(input_file):
-    with open(input_file, 'rb') as f:
-        result = np.load(f, allow_pickle = True)
-    return result
 
-def get_points(rho, theta):
-    a = np.cos(theta)
-    b = np.sin(theta)
-    x0 = a * rho
-    y0 = b * rho
-    x1 = int(x0 + 10000 * (-b))
-    y1 = int(y0 + 10000 * (a))
-    x2 = int(x0 - 10000 * (-b))
-    y2 = int(y0 - 10000 * (a))
-    return (x0,y0),(x1,y1),(x2,y2)
+def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
 
-def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
-    radius = (int(sz[0]/2.0), int(sz[1]/2.0))
-    [x, y] = np.meshgrid(range(-radius[0], radius[0]+1), range(-radius[1], radius[1]+1))
-
-    x1 = x * np.cos(theta) + y * np.sin(theta)
-    y1 = -x * np.sin(theta) + y * np.cos(theta)
-
-    gauss = omega**2 / (4*np.pi * K**2) * np.exp(- omega**2 / (8*K**2) * ( 4 * x1**2 + y1**2))
-#     myimshow(gauss)
-    sinusoid = func(omega * x1) * np.exp(K**2 / 2)
-#     myimshow(sinusoid)
-    gabor = gauss * sinusoid
-    return gabor
-
-
-def get_lines(img, unscaled_img, output_file, h_threshold = 200):
     outputs = []
     mm_crop = ((img - np.min(img) )/ (np.max(img) - np.min(img)) ) * 255
     mm_crop = mm_crop.astype(np.uint8)
@@ -48,6 +20,7 @@ def get_lines(img, unscaled_img, output_file, h_threshold = 200):
     _,dict_lines = process_crop(((0,0), mm_crop, unscaled_img, h_threshold))
 
     lines = dict_lines[-1]
+    np.save('./np_results/'+tmp[0][-4]+'_'+str(tmp[1])+str(tmp[2])+".npy", lines)
     post_process = dict_lines[0]
     new = post_process.copy()
     print('Draw lines...')
@@ -72,25 +45,28 @@ def main(args):
 
     print('Crop Retrieved')
     print('Starting Hough Process')
-    imgs, final_img = get_lines(crop,unscaled_crop, args.h, h_threshold = args.hough)#"image04.npy")
+    imgs, final_img = get_lines(crop,unscaled_crop, args.h, (args.o, args.subcrop_i, args.subcrop_j), h_threshold = args.hough)#"image04.npy")
 
-    f, axes = plt.subplots(1,len(imgs)+1, figsize = (64,64))
+    f, axes = plt.subplots(1,len(imgs)+1+3, figsize = (64,64))
     for i in range(len(imgs)):
         if i < len(imgs) -1:
             crop_img = imgs[i]
             axes[i].imshow(crop_img)
         else:
             axes[i].imshow(final_img)
-    """print('Hough process done, start distinguish_satellites')
+    print('Hough process done, start distinguish_satellites')
 
     parameters = tuple([crop, imgs[-1], 0,0])
 
     _, results = retrieve_raw_satellites(parameters)
 
-    mmc, tuple_= results
+    mmc, thds, imgsds, fth, tuple_= results
 
     axes[-1].imshow(mmc)
-    """
+    axes[-2].imshow(fth)
+    axes[-3].imshow(imgsds)
+    axes[-3].imshow(thds)
+
     plt.savefig(args.o)
     plt.show()
     #'raw_img_full.png')
