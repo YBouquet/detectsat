@@ -6,7 +6,6 @@ from scipy.signal import convolve2d
 
 
 def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
-
     radius = (int(sz[0]/2.0), int(sz[1]/2.0))
     [x, y] = np.meshgrid(range(-radius[0], radius[0]+1), range(-radius[1], radius[1]+1))
 
