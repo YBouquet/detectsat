@@ -11,7 +11,6 @@ from utils.post_processing import *
 import utils.prologue
 
 
-
 def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
 
     outputs = []
