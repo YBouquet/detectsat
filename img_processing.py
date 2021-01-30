@@ -6,6 +6,9 @@ from scipy.signal import convolve2d
 
 
 def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
+    """
+    Generate gabor filters
+    """
     radius = (int(sz[0]/2.0), int(sz[1]/2.0))
     [x, y] = np.meshgrid(range(-radius[0], radius[0]+1), range(-radius[1], radius[1]+1))
 
@@ -18,7 +21,9 @@ def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
     return gabor
 
 def mask_bad_pixels(crop, unscaled_crop):
-
+    """
+    Retrieve mask with bad pixels (bad columns, persistence effect, saturated 'inliers' and 'outliers' pixels)
+    """
     filterSize =(8, 8)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,filterSize)
     tophat_img = cv2.morphologyEx(crop, cv2.MORPH_TOPHAT, kernel)
@@ -31,8 +36,8 @@ def morphological_reconstruction(mask, bin_img, kernel_size):
     for i in range(100):
         prev_seed = seed
         seed = cv2.dilate(seed,disk_mask, iterations = 1) * bin_img
-        if (seed == prev_seed).all():
-            break
+        if (seed == prev_seed).all(): #check if tshe seed has changed 
+            break #if not we stop the process
     return seed
 
 def process_crop(params, gabor_k_size = 16):

@@ -10,9 +10,8 @@ import multiprocessing as mp
 
 
 def main(args):
-    raw_img, unscaled_img = get_raw_image(args.i)#"OMEGA.2020-03-18T00_21_55.912_fullfield_binned.fits")
+    raw_img, unscaled_img = get_raw_image(args.i)
     crops_addresses = get_blocks_addresses(raw_img)
-    #hough_result = get_lines(raw_img, crops_addresses, len(crops_addresses.keys()), len(list(crops_addresses.items())[0][1]), args['h'])#"image04.npy")
     crops = []
     for i, row in enumerate(sorted(crops_addresses.keys())):
         for j, column in enumerate(crops_addresses[row]):
