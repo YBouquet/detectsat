@@ -26,23 +26,22 @@ def main(args):
             crops.append(((i,j), crop, unscaled_crop, args.hough,  filename, args.load_lines, args.save_lines))
 
     print('Full Processing...')
-    start = time.time()
-    if not(args.load_lines) :
-        pool = mp.Pool(8)
-        with pool:
-            dict_lines = dict(pool.map(process_block, crops))
-        pool.join()
-        pool.close()
+    global_start = time.time()
+    pool = mp.Pool(8)
+    with pool:
+        dict_lines = dict(pool.map(process_block, crops))
+    pool.join()
+    pool.close()
 
-    end = time.time()
-    seconds = (end - start)
+    global_end = time.time()
+    seconds = (global_end - global_start)
     print('... Ending Full Processing after %d min %d sec' % (seconds // 60, seconds % 60))
 
     f, axes = plt.subplots(4,8, figsize = (64,64))
     for i in range(4):
         for j in range(8):
             _,post_results = dict_lines[(i,j)]
-            crop_img, _, _, _, crop_results = post_results
+            _, _, _, crop_img,crop_results = post_results
             axes[i, j].imshow(crop_img)
 
     plt.savefig(args.o)

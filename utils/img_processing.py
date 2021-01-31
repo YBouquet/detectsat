@@ -1,12 +1,14 @@
+import os
+import math
+import time
+
 import cv2
 import numpy as np
 from utils.canny import cannyEdgeDetector
-import math
 from scipy.signal import convolve2d
 
 from utils.post_processing import *
 
-import time
 
 
 def genGabor(sz, omega, theta, func=np.cos, K=np.pi):
@@ -54,10 +56,12 @@ def process_block(params, gabor_k_size = 16):
     mm_crop = mm_crop.astype(np.uint8)
 
     subcrop = crop[subsize:-subsize,subsize:-subsize].copy()
+    hough_results = [None] * 8
 
     if load_lines and os.path.exists(filename):
         print("LOAD LINES...,(%d,%d)"%id_)
         lines = np.load(filename, allow_pickle = True)
+        hough_results[-1] = lines
     else :
         print('Start Hough Processing, (%d,%d)...'%id_)
         start = time.time()
@@ -112,11 +116,16 @@ def process_block(params, gabor_k_size = 16):
                 lines = np.array([])
             np.save(filename, lines)
 
+        hough_results = [post_process, bad_pix_mask, tophat_img, img_gseuil, final_mask, sortie, imgs_final[0], lines]
+
     i, j = id_
     post_process_params = (subcrop, lines, i,j)
     print('Start Post-Processing..., (%d,%d)' % id_)
     start = time.time()
     _, final_results = retrieve_raw_satellites(post_process_params)
     end = time.time()
+    seconds = (end-start)
+    print('... Ending Post-Processing after %d min %d sec, (%d,%d)' % tuple([seconds // 60, seconds % 60] + list(id_)))
+
     print('End thread, (%d,%d)'%id_)
-    return (id_, ((post_process, bad_pix_mask, tophat_img, img_gseuil, final_mask, sortie, imgs_final[0], lines), final_results))
+    return (id_, (tuple(hough_results), final_results))
