@@ -1,7 +1,7 @@
 from utils.mosaic import *
 from utils.lines import *
 from utils.img_processing.py import = morphological_reconstruction
-from utils import prologue
+import utils.prologue as prologue
 import numpy as np
 import cv2
 import os

@@ -1,5 +1,5 @@
 __pycache__/
 *.png
 lines/
-np_results/
+debug_results/
 dataset/

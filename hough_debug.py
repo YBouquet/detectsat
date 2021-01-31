@@ -7,18 +7,17 @@ import os
 
 from utils.mosaic import *
 from utils.lines import *
-from utils.img_processing import process_crop
+from utils.img_processing import process_block
 from utils.post_processing import *
 import utils.prologue as prologue
 
-DATAPATH = './np_results/'
+DATAPATH = './debug_results/'
 def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
 
     outputs = []
-    mm_crop = ((img - np.min(img) )/ (np.max(img) - np.min(img)) ) * 255
-    mm_crop = mm_crop.astype(np.uint8)
     print('Process...')
-    _,dict_lines = process_crop(((0,0), mm_crop, unscaled_img, h_threshold))
+    _, results_tuple = process_block(((0,0), img, unscaled_img, h_threshold, None , False ,False))
+    dict_lines, post_dict_lines = results_tuple
 
     lines = dict_lines[-1]
     if not os.path.exists(DATAPATH):
@@ -29,7 +28,6 @@ def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
     new = post_process.copy()
     print('Draw lines...')
     if lines is not None:
-        #lines = lines[lines[:,0,1] != 0]
         print(lines)
         for line in lines:
             for rho, theta in line:
@@ -37,7 +35,7 @@ def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
                 new = cv2.line(new, p1, p2, (255, 0, 0), 2)
     else:
         lines = []
-    return dict_lines, new
+    return dict_lines, new, post_dict_lines
 
 def main(args):
     print('Retrieving fits file...')
@@ -48,8 +46,8 @@ def main(args):
     unscaled_crop = get_block(unscaled_img, m_row, crops_addresses[m_row][args.subcrop_j])
 
     print('Block Retrieved')
-    print('Starting Hough Process')
-    imgs, final_img = get_lines(crop,unscaled_crop, args.h, (args.o, args.subcrop_i, args.subcrop_j), h_threshold = args.hough)#"image04.npy")
+    print('Starting Debug Process')
+    imgs, final_img, post_dict_lines= get_lines(crop,unscaled_crop, args.h, (args.o, args.subcrop_i, args.subcrop_j), h_threshold = args.hough)#"image04.npy")
 
     f, axes = plt.subplots(1,len(imgs)+1+3, figsize = (64,64))
     for i in range(len(imgs)):
@@ -58,13 +56,9 @@ def main(args):
             axes[i].imshow(crop_img)
         else:
             axes[i].imshow(final_img)
-    print('Hough process done, start distinguish_satellites')
+    print('Debug process done')
 
-    parameters = tuple([crop, imgs[-1], 0,0])
-
-    _, results = retrieve_raw_satellites(parameters)
-
-    mmc, thds, imgsds, fth, tuple_= results
+    thds, imgsds, fth, mmc,  tuple_= post_dict_lines
 
     axes[-1].imshow(mmc)
     axes[-2].imshow(fth)

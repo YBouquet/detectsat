@@ -166,8 +166,7 @@ def retrieve_raw_satellites(params):#raw_img, crops_addresses, h_results, i=0, j
         streaks.
     """
     crop, h_result, i,j = params
-    id = (i,j)
-    print('Start thread (%d,%d)'%id)
+    id_ = (i,j)
     mm_crop = ((crop - np.min(crop) )/ (np.max(crop) - np.min(crop)) ) * 255
     mm_crop = mm_crop.astype(np.uint8())
     filterSize =(30, 30)
@@ -182,6 +181,4 @@ def retrieve_raw_satellites(params):#raw_img, crops_addresses, h_results, i=0, j
         for j in bs[i]:
             bresen_line = build_line(r, ts[i], j, h,w)
             new[bresen_line[:,0], bresen_line[:,1]] = palette[i%5]
-
-    print('End thread (%d,%d)'%id)
-    return id, (new, tophat_img, img_gseuil, th_crop, (lines, rs,ts,bs))
+    return id_, (tophat_img, img_gseuil, th_crop, new, (lines, rs,ts,bs))
