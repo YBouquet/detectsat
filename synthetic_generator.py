@@ -39,8 +39,8 @@ def main(args, seed = 123456789):
 
     random.seed(seed)
 
-    for i in range(1):
-        for j in range(1):
+    for i in range(4):
+        for j in range(8):
             x_ = list(crops_addresses.keys())[i]
             crop = get_block(raw_image, x_, crops_addresses[x_][j])
             unscaled_crop = get_block(unscaled_img, x_, crops_addresses[x_][j])
