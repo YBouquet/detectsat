@@ -24,10 +24,15 @@ It saves lines detected by Hough in one file per block and an image displaying t
 
 Example:
 * If you want to save the lines in a directory : 
+
 `python hough_full_process.py --i "your_image_path.fits" --o "output_path.png" --hough 200`
+
 * If you do not want to save the lines in a directory :
+
 `python hough_full_process.py --i "your_image_path.fits" --o "output_path.png" --no-save_lines --hough 200`
+
 * If you already saved lines in a directory for this output : 
+
 `python hough_full_process.py --i "your_image_path.fits" --o "output_path.png" --load_lines --hough 200`
 
 * --load_lines : load lines detected by Hough instead of running the hough detection process
