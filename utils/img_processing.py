@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from canny import cannyEdgeDetector
+from utils.canny import cannyEdgeDetector
 import math
 from scipy.signal import convolve2d
 
@@ -36,7 +36,7 @@ def morphological_reconstruction(mask, bin_img, kernel_size):
     for i in range(100):
         prev_seed = seed
         seed = cv2.dilate(seed,disk_mask, iterations = 1) * bin_img
-        if (seed == prev_seed).all(): #check if tshe seed has changed 
+        if (seed == prev_seed).all(): #check if tshe seed has changed
             break #if not we stop the process
     return seed
 

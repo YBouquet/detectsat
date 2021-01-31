@@ -9,6 +9,7 @@ from utils.post_processing import *
 from utils.mosaic import *
 from utils.img_processing import *
 
+DATAPATH = './lines/'
 
 def main(args):
     raw_img, unscaled_img = get_raw_image(args.i)

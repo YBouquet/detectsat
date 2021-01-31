@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 import networkx as nx
-from lines import *
+from utils.lines import *
 
 datapath = 'graphs/'
 
@@ -163,7 +163,7 @@ def retrieve_raw_satellites(params):#raw_img, crops_addresses, h_results, i=0, j
         tuple_ contains the block with the lines following the streaks, the top-hat transform of the input block
         used to remove big light blobs from it,the thresholded top-hat transform which generates a mask used to
         retrieve th_crop, i.e. only pixels that do not belong to blobs and finaly the final lines defining the
-        streaks. 
+        streaks.
     """
     crop, h_result, i,j = params
     id = (i,j)

@@ -49,7 +49,7 @@ def get_slope(rho, theta):
     x0,y0 = p0
     x1,y1 = p1
     x2,y2 = p2
-    return p0, (lambda x : y0 - (y2-y1)/(x2-x1) * (x0 + y_offset) + x_offset +  (y2-y1)/(x2-x1)*x)
+    return p0, (lambda x : y0 - (y2-y1)/(x2-x1) * x0 +  (y2-y1)/(x2-x1)*x)
 
 def get_slope_parameters(rho, theta):
     """
@@ -68,7 +68,7 @@ def get_slope_parameters(rho, theta):
     x0,y0 = p0
     x1,y1 = p1
     x2,y2 = p2
-    return (x0+x_offset, y0+y_offset), y0+y_offset - ((y2-y1)/(x2-x1)) * (x0+x_offset), ((y2-y1)/(x2-x1))
+    return (x0, y0), y0 - ((y2-y1)/(x2-x1)) * x0, ((y2-y1)/(x2-x1))
 
 def build_line(rho, theta,i,h,w):
     """
@@ -85,7 +85,7 @@ def build_line(rho, theta,i,h,w):
     f_array : np.array(int)
         pixels coordinates belonging to the line
     """
-    (x0,y0), f = get_slope(rho, theta, x_offset = x_offset, y_offset = y_offset)
+    (x0,y0), f = get_slope(rho, theta)
     bresen_line = bresenham(int(np.floor(f(0)))+i, 0, int(np.floor(f(w-1)))+i, w-1)
     m_lits = list(bresen_line)
     f_array = np.array([[int(math.floor(x)), int(math.floor(y))] for x,y in m_lits])

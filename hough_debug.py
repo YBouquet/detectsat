@@ -3,14 +3,15 @@ import multiprocessing as mp
 
 import numpy as np
 import math
+import os
 
 from utils.mosaic import *
 from utils.lines import *
 from utils.img_processing import process_crop
 from utils.post_processing import *
-import utils.prologue
+import utils.prologue as prologue
 
-
+DATAPATH = './np_results/'
 def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
 
     outputs = []
@@ -20,7 +21,10 @@ def get_lines(img, unscaled_img, output_file, tmp,  h_threshold = 200):
     _,dict_lines = process_crop(((0,0), mm_crop, unscaled_img, h_threshold))
 
     lines = dict_lines[-1]
-    np.save('./np_results/'+tmp[0][-4]+'_'+str(tmp[1])+str(tmp[2])+".npy", lines)
+    if not os.path.exists(DATAPATH):
+        os.makedirs(DATAPATH)
+
+    np.save(DATAPATH+tmp[0][:-4]+'_'+str(tmp[1])+str(tmp[2])+".npy", lines)
     post_process = dict_lines[0]
     new = post_process.copy()
     print('Draw lines...')
@@ -43,7 +47,7 @@ def main(args):
     crop = get_block(raw_img, m_row, crops_addresses[m_row][args.subcrop_j])#[8:-8,8:-8]
     unscaled_crop = get_block(unscaled_img, m_row, crops_addresses[m_row][args.subcrop_j])
 
-    print('Crop Retrieved')
+    print('Block Retrieved')
     print('Starting Hough Process')
     imgs, final_img = get_lines(crop,unscaled_crop, args.h, (args.o, args.subcrop_i, args.subcrop_j), h_threshold = args.hough)#"image04.npy")
 
