@@ -2,4 +2,4 @@ __pycache__/
 *.png
 lines/
 debug_results/
-dataset/
+trainset/
