@@ -3,3 +3,4 @@ __pycache__/
 lines/
 debug_results/
 trainset/
+.ipynb_checkpoints/
